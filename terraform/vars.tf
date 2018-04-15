@@ -24,8 +24,13 @@ variable "aws_logs_bucket" {
 }
 
 variable "aws_route53_zone" {
-  description = "AWS Route53 domain zone id"
-  default = "Z1M24WI6MQFRP8"
+  description = "AWS Route53 domain zone name"
+  default = "rymcg.tech"
+}
+
+variable "aws_certificate_domain" {
+  description = "AWS Certificate Manager certificate name"
+  default = "*.rymcg.tech"
 }
 
 variable "cognito_auth_domain" {

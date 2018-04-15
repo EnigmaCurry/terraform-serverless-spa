@@ -1,13 +1,54 @@
+// AWS infrastructure for hosting a single page app and backend resources
+// - S3 bucket to store the website files (SPA)
+// - Cloudfront for public content delivery
+// - Route53 for DNS with a custom domain name
+// - ACM issued TLS certificate
+// - API Gateway and Lambda serverless backend
+// - Cognito User Pool authentication
+
+// Prerequisites:
+// - Configured AWS cli with permissive IAM role (you just need ~/.aws/credentials created):
+//  - 
+// - Preconfigured Route53 zone for your domain, do this in the AWS console first.
+// - Preconfigured Certificate in AWS Certificate Manager, do this in the AWS console first.
+// - Update vars.ts with the names of those resources you created.
+// - Create these with CLI or web console first.
+// - Reading through this source and understanding what it does :)
+// - Edit all the variable defaults in vars.tf before applying this.
+
+// Notes:
+// If you haven't used CloudFront before, you may be unaccustomed to how long it takes to create a distribution.
+// Terraform itself does not take long to run, but you should open up the AWS console in your browser,
+// navigate to the Cloudfront Distributions page and watch the deployment going on in the background.
+// It will stay in "In Progress" status until it's ready to be viewed.
+// Initial CloudFront deployment might take 30 minutes to an hour,
+// depending on how many edge nodes it has to configure for the set price class.
+
 provider "aws" {
     region = "${var.aws_region}"
 }
 
-// Public S3 bucket to hold our SPA html web assets:
+// TLS certificate - a reference to a certificate already created in AWS Certificate Manager:
 
+data "aws_acm_certificate" "certificate" {
+  domain = "${var.aws_certificate_domain}"
+  statuses = ["ISSUED"]
+  most_recent = true
+}
+
+// Route53 zone - Create this in the console manually
+
+data "aws_route53_zone" "zone" {
+  name = "${var.aws_route53_zone}"
+}
+
+
+// Cloudfront access identity to read from the S3 bucket:
 resource "aws_cloudfront_origin_access_identity" "origin_access_identity" {
   comment = "Managed by ${var.app_name} terraform"
 }
 
+// S3 Policy to only give permission to the cloudfront access identity:
 data "aws_iam_policy_document" "cloudfront_s3_policy" {
   statement {
     actions   = ["s3:GetObject"]
@@ -30,20 +71,22 @@ data "aws_iam_policy_document" "cloudfront_s3_policy" {
   }
 }
 
+// Create the S3 bucket to store the HTML, images, javascript etc for the SPA:
 resource "aws_s3_bucket" "public_html" {
   bucket = "${var.aws_public_html_bucket}"
+  // Attach the cloudfront S3 policy created above:
   policy = "${data.aws_iam_policy_document.cloudfront_s3_policy.json}"
   website {
     index_document = "index.html"
   }
 }
 
+// Create an S3 bucket for cloudfront (or anything else) to store their logs:
 resource "aws_s3_bucket" "logs" {
   bucket = "${var.aws_logs_bucket}"
 }
 
-// Cloudfront to serve our s3 bucket to the world:
-
+// Configure cloudfront as the CDN serving content from the S3 bucket
 resource "aws_cloudfront_distribution" "s3_distribution" {
   price_class = "PriceClass_100"
   origin {
@@ -92,26 +135,25 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn = "${data.aws_acm_certificate.certificate.arn}"
+    ssl_support_method = "sni-only"
   }
 
 }
 
-// Route53 domain routing
+resource "aws_route53_record" "domain" {
+  zone_id = "${data.aws_route53_zone.zone.id}"
+  name = "${var.frontend_domain_name}"
+  type = "A"
 
-# resource "aws_route53_record" "domain" {
-#   zone_id = "${var.aws_route53_zone}"
-#   name = "${var.app_name}-www"
-#   type = "A"
-
-#   alias {
-#     name = "${aws_s3_bucket.public_html.website_domain}"
-#     zone_id = "${aws_s3_bucket.public_html.hosted_zone_id}"
-#   }
-# }
+  alias {
+    name = "${aws_cloudfront_distribution.s3_distribution.domain_name}"
+    zone_id = "${aws_cloudfront_distribution.s3_distribution.hosted_zone_id}"
+    evaluate_target_health = true
+  }
+}
 
 // Cognito User Pool provides our backend authentication system:
-
 resource "aws_cognito_user_pool" "pool" {
   name = "ts_vue_pool"
   auto_verified_attributes = [
