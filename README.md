@@ -2,14 +2,16 @@
 
 Terraformed serverless stack for a VueJS single page app.
 
-AWS infrastructure managed by Terraform:
+Example deployment: [www.ts-vue.rymcg.tech](https://www.ts-vue.rymcg.tech)
 
- * S3 bucket for storing web resources (html,js,images,etc)
- * CloudFront for public content distribution
- * Route53 for DNS with a custom domain name
- * Amazon Certificate Manager issued TLS certificate
- * API Gateway and Lambda serverless backend
- * Cognito User Pool / Federated Identity for authentication
+AWS infrastructure managed via [Terraform](https://terraform.io):
+
+ * [x] S3 bucket for storing web resources (html,js,images,etc)
+ * [x] CloudFront for public content distribution
+ * [x] Route53 for DNS with a custom domain name
+ * [x] Amazon Certificate Manager issued TLS certificate
+ * [ ] API Gateway and Lambda serverless backend
+ * [ ] Cognito User Pool / Federated Identity for authentication
 
 
 ## Prerequisites
@@ -17,11 +19,20 @@ AWS infrastructure managed by Terraform:
  * Amazon AWS account
  * AWS IAM role with a lot of permissions. 
      * [iam_policy.json](terraform/iam_policy.json) shows the policy I'm using myself. 
+ * Your own domain name
+     * With the AWS web console, create a Route53 Hosted Zone for the root domain.
+     * Configure your domain registrar (whois records) with the AWS
+       NS records shown in the Route53 zone. (ns-xxx.awsdns-xxx.xxx)
+     * Edit [terraform/vars.tf](terraform/vars.tf) field called
+       aws_route53_zone, using the name of the Route53 root zone you
+       created in the console.
+     * With your root domain now hosted in Route53, this tool can now
+       automatically create subdomains using it.
  * Install [AWS cli tools](https://aws.amazon.com/cli/)
      * Arch: pacman -S aws-cli
      * Other: pip install awscli
  * Configure AWS cli for your access credentials:
-     * aws configure
+     * run: aws configure
      * creates $HOME/.aws/credentials
  * Install [terraform](https://www.terraform.io/downloads.html)
      * Arch: pacman -S terraform
