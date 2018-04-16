@@ -28,11 +28,6 @@ variable "aws_route53_zone" {
   default = "rymcg.tech"
 }
 
-variable "aws_certificate_domain" {
-  description = "AWS Certificate Manager certificate name"
-  default = "*.rymcg.tech"
-}
-
 variable "cognito_auth_domain" {
     description = "AWS Cognito auth domain. Pick a UNIQUE name (per avail zone)."
     default = "ts-vue"

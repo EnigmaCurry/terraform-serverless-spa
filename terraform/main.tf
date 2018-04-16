@@ -17,23 +17,20 @@
 // - Edit all the variable defaults in vars.tf before applying this.
 
 // Notes:
-// If you haven't used CloudFront before, you may be unaccustomed to how long it takes to create a distribution.
-// Terraform itself does not take long to run, but you should open up the AWS console in your browser,
+// - Certificate domain validation through DNS also takes a long time.
+// You may see "aws_acm_certificate_validation.cert: Still creating... " for up to 30 mins.
+// - CloudFront/Route53 may complain that the SSL certificate does not exist, and fail.
+// Simply run the apply again, and it should find it the second time.
+// - If you haven't used CloudFront before, you may be unaccustomed to how long it takes to create a distribution.
+// Terraform itself does not take long to run this step, but you should open up the AWS console in your browser,
 // navigate to the Cloudfront Distributions page and watch the deployment going on in the background.
 // It will stay in "In Progress" status until it's ready to be viewed.
 // Initial CloudFront deployment might take 30 minutes to an hour,
 // depending on how many edge nodes it has to configure for the set price class.
 
+
 provider "aws" {
     region = "${var.aws_region}"
-}
-
-// TLS certificate - a reference to a certificate already created in AWS Certificate Manager:
-
-data "aws_acm_certificate" "certificate" {
-  domain = "${var.aws_certificate_domain}"
-  statuses = ["ISSUED"]
-  most_recent = true
 }
 
 // Route53 zone - Create this in the console manually
@@ -86,6 +83,13 @@ resource "aws_s3_bucket" "logs" {
   bucket = "${var.aws_logs_bucket}"
 }
 
+// TLS certificate - a reference to a certificate already created in AWS Certificate Manager:
+
+resource "aws_acm_certificate" "certificate" {
+  domain_name = "${var.frontend_domain_name}"
+  validation_method = "DNS"
+}
+
 // Configure cloudfront as the CDN serving content from the S3 bucket
 resource "aws_cloudfront_distribution" "s3_distribution" {
   price_class = "PriceClass_100"
@@ -122,7 +126,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
       }
     }
 
-    viewer_protocol_policy = "allow-all"
+    viewer_protocol_policy = "https-only"
     min_ttl = 0
     default_ttl = 3600
     max_ttl = 86400
@@ -135,13 +139,13 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   viewer_certificate {
-    acm_certificate_arn = "${data.aws_acm_certificate.certificate.arn}"
+    acm_certificate_arn = "${aws_acm_certificate.certificate.arn}"
     ssl_support_method = "sni-only"
   }
-
 }
 
-resource "aws_route53_record" "domain" {
+// Route 53 record for the frontend:
+resource "aws_route53_record" "frontend" {
   zone_id = "${data.aws_route53_zone.zone.id}"
   name = "${var.frontend_domain_name}"
   type = "A"
@@ -151,6 +155,19 @@ resource "aws_route53_record" "domain" {
     zone_id = "${aws_cloudfront_distribution.s3_distribution.hosted_zone_id}"
     evaluate_target_health = true
   }
+}
+
+// Route 53 record to validate the TLS Certificate domain
+resource "aws_route53_record" "cert_validation" {
+  name = "${aws_acm_certificate.certificate.domain_validation_options.0.resource_record_name}"
+  type = "${aws_acm_certificate.certificate.domain_validation_options.0.resource_record_type}"
+  zone_id = "${data.aws_route53_zone.zone.id}"
+  records = ["${aws_acm_certificate.certificate.domain_validation_options.0.resource_record_value}"]
+  ttl = 60
+}
+resource "aws_acm_certificate_validation" "cert" {
+  certificate_arn = "${aws_acm_certificate.certificate.arn}"
+  validation_record_fqdns = ["${aws_route53_record.cert_validation.fqdn}"]
 }
 
 // Cognito User Pool provides our backend authentication system:
