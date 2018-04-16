@@ -5,7 +5,7 @@ variable "app_name" {
 
 variable "frontend_domain_name" {
   description = "The fully qualified domain name (FQDN) for the frontend application"
-  default = "www.ts-vue.rymcg.tech"
+  default = "ts-vue.rymcg.tech"
 }
 
 variable "aws_region" {
