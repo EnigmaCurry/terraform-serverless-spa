@@ -9,7 +9,7 @@ variable "frontend_domain_name" {
 }
 
 variable "aws_region" {
-    description = "AWS region where to launch instances"
+    description = "AWS region to use by default"
     default = "us-east-1"
 }
 
@@ -24,7 +24,7 @@ variable "aws_logs_bucket" {
 }
 
 variable "aws_route53_zone" {
-  description = "AWS Route53 domain zone name"
+  description = "AWS Route53 domain zone name (assumed preexisting)"
   default = "rymcg.tech"
 }
 
