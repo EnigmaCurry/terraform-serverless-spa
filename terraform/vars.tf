@@ -19,7 +19,7 @@ variable "aws_public_html_bucket" {
 }
 
 variable "aws_logs_bucket" {
-  description = "AWS S3 bucket to store static build of the frontend HTML assets."
+  description = "AWS S3 bucket to store logs"
   default = "ec-ts-vue-logs"
 }
 
