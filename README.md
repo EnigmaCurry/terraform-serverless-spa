@@ -103,10 +103,15 @@ API Gateway and Lambda backend is managed seperately via
      * (.npmrc is in .gitignore, so it is only a local config)
  * Chalice-env creates a Python virtual environment in which to
    install dependencies.
- * Enter the virtualenv:
-     * source chalice-env/bin/activate
- * TODO: how to deploy chalice app
- * Leave the virtualenv, run:
+ * Package the chalice apps (writes to chalice/dist):
+     * npm run package
+   
+If you need to interact with chalice directly, you can enter the
+virtual environment:
+
+ * Run: source chalice-env/bin/activate
+ * Do what you need to
+ * When done, deactivate the virtual environment:
      * deactivate
      
 
