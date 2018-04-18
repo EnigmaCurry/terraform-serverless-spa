@@ -1,0 +1,11 @@
+{
+  "name": "terraform-serverless-spa-chalice",
+  "private": true,
+  "config": {
+    "aws_chalice_deploy_bucket": ""
+  },
+  "scripts": {
+    "config": "node scripts/npmrc-config.js",
+    "chalice-env": "python3 -m ensurepip --user && python3 -m pip install --user --upgrade pip && python3 -m pip install --user --upgrade virtualenv && python3 -m virtualenv chalice-env && source chalice-env/bin/activate && pip install -r requirements.txt"
+  }
+}

@@ -23,6 +23,11 @@ variable "aws_logs_bucket" {
   default = "ec-ts-vue-logs"
 }
 
+variable "aws_chalice_deploy_bucket" {
+  description = "AWS S3 bucket to store chalice deployment packages"
+  default = "ec-chalice-deploy"
+}
+
 variable "aws_route53_zone" {
   description = "AWS Route53 domain zone name (assumed preexisting)"
   default = "rymcg.tech"

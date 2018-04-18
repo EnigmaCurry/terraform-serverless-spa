@@ -3,7 +3,6 @@
 // - Cloudfront for public content delivery
 // - Route53 for DNS with a custom domain name
 // - ACM issued TLS certificate
-// - API Gateway and Lambda serverless backend
 // - Cognito User Pool authentication
 
 // Prerequisites:
@@ -79,6 +78,10 @@ resource "aws_s3_bucket" "logs" {
   bucket = "${var.aws_logs_bucket}"
 }
 
+// Create an S3 bucket for chalice to upload it's packages
+resource "aws_s3_bucket" "chalice_deploy" {
+  bucket = "${var.aws_chalice_deploy_bucket}"
+}
 // TLS certificate - a reference to a certificate already created in AWS Certificate Manager:
 
 resource "aws_acm_certificate" "certificate" {
@@ -204,4 +207,7 @@ output "frontend_url" {
 }
 output "public_html_s3_bucket" {
   value = "${aws_s3_bucket.public_html.id}"
+}
+output "aws_chalice_deploy_bucket" {
+  value = "${aws_s3_bucket.chalice_deploy.id}"
 }

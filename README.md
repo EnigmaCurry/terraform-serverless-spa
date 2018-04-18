@@ -14,6 +14,8 @@ AWS infrastructure automatically managed via [Terraform](https://terraform.io):
  * [ ] API Gateway and Lambda serverless backend
  * [ ] Cognito User Pool / Federated Identity for authentication
 
+API Gateway and Lambda backend is managed seperately via
+[Chalice](http://chalice.readthedocs.io)
 
 ## Prerequisites
 
@@ -63,7 +65,8 @@ AWS infrastructure automatically managed via [Terraform](https://terraform.io):
        credentials on the machine.
  * Install [terraform](https://www.terraform.io/downloads.html)
      * Arch: pacman -S terraform
- 
+ * Install Python 3.6 (or latest)
+     * Arch: pacman -S python3 
  
 ## Create AWS Infrastructure
 
@@ -81,9 +84,7 @@ AWS infrastructure automatically managed via [Terraform](https://terraform.io):
    'terraform apply', it should work the 2nd time around.
  * The final output terraform shows is called 'Outputs'. Make a note
    of this information, it lists the IDs of some of the resources
-   created. You you will need to copy this information into your app
-   later.
- * If you need to see these variables again, just run 'terraform refresh'.
+   created. Run 'terraform refresh' if you need to see them again.
  * Even after 'terraform apply' is finished, Amazon is still
    performing a few actions in the background. In the AWS console,
    check the CloudFront distribution status, as well as the
@@ -91,21 +92,34 @@ AWS infrastructure automatically managed via [Terraform](https://terraform.io):
    completed status, so that you know everything is setup
    successfully.
 
-## Deploy app
+## Deploy Chalice lambda functions
 
- * Edit [app/package.json](app/package.json) and edit the listed
-   config variables, using the IDs output in the terraform output.
-     * Alternatively, you can set these variables in your ~/.npmrc
-       file and thus keep the IDs out of version control.
-     * Example ~/.npmrc file, where the app name listed in your package.json is 'app_name':
-     ```
-     app_name:aws_cloudfront_distribution=XXXXXXXXXXXXX
-     app_name:public_html_s3_bucket=xxxxxxxxxx
-     ```
+ * From the chalice directory, run:
+     * npm run config
+     * npm run chalice-env
+ * Config does the following:
+     * Collects data from terraform
+     * Creates chalice/.npmrc with necessary variables
+     * (.npmrc is in .gitignore, so it is only a local config)
+ * Chalice-env creates a Python virtual environment in which to
+   install dependencies.
+ * Enter the virtualenv:
+     * source chalice-env/bin/activate
+ * TODO: how to deploy chalice app
+ * Leave the virtualenv, run:
+     * deactivate
+     
+
+## Deploy frontend app
+
  * From the app directory, run:
      * npm install
+     * npm run config
      * npm run deploy
-
+ * Config does the following:
+     * Collects data from terraform
+     * Creates app/.npmrc with necessary variables
+     * (.npmrc is in .gitignore, so it is only a local config)
  * Deploy does the following things:
      * Checks the config variables.
      * Builds the app in the dist/ directory.
@@ -123,3 +137,4 @@ AWS infrastructure automatically managed via [Terraform](https://terraform.io):
 
 Your app should now be visible at the frontend URL you configured in
 [terraform/vars.tf](terraform/vars.tf).
+

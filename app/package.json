@@ -1,5 +1,5 @@
 {
-  "name": "ts_vue",
+  "name": "terraform-serverless-spa",
   "version": "0.1.0",
   "private": true,
   "config": {
@@ -15,9 +15,12 @@
     "test": "vue-cli-service test",
     "e2e": "vue-cli-service e2e",
     "lint": "vue-cli-service lint",
-    "e2e:open": "vue-cli-service e2e:open"
+    "e2e:open": "vue-cli-service e2e:open",
+    "config": "node scripts/npmrc-config.js"
   },
   "dependencies": {
+    "amazon-cognito-identity-js": "^2.0.3",
+    "axios": "^0.18.0",
     "register-service-worker": "^1.0.0",
     "vue": "^2.5.13",
     "vue-class-component": "^6.0.0",

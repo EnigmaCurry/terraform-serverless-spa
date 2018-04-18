@@ -8,3 +8,5 @@
 
 terraform/.terraform
 *.tfstate*
+*.npmrc
+chalice/chalice-env

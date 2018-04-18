@@ -1,4 +1,6 @@
-// Read JSON input from 'aws cloudfront create-invalidation
+// Reads JSON input from 'aws cloudfront create-invalidation'
+// Parses the AWS Invalidation ID
+// Waits for the cache invalidation to finish
 
 var stdin = process.stdin,
     inputChunks = [],
