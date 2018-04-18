@@ -8,6 +8,7 @@ AWS infrastructure automatically managed via [Terraform](https://terraform.io):
 
  * [x] S3 bucket for storing web resources (html,js,images,etc)
  * [x] CloudFront for public content distribution
+     * [x] Deployment time cache invalidation for fast iteration
  * [x] Route53 for DNS with a custom domain name
  * [x] Amazon Certificate Manager issued TLS certificate
  * [ ] API Gateway and Lambda serverless backend
@@ -67,31 +68,58 @@ AWS infrastructure automatically managed via [Terraform](https://terraform.io):
 ## Create AWS Infrastructure
 
  * Edit all the variables in [terraform/vars.tf](terraform/vars.tf) to match your environment.
- * [terraform/main.tf](terraform/main.tf) is the main terraform script to create everything.
+ * [terraform/main.tf](terraform/main.tf) is the main terraform script
+   to create everything.
  * In the terraform directory run:
      * terraform plan
      * terraform apply (then type 'yes' after reviewing the changes)
-     * If you want to destroy it later (ie stop paying for it): terraform destroy
- * This will take a LONG time (maybe 1hr+) the first time creating the resources.
+     * If you want to destroy it later (ie stop paying for it):
+       terraform destroy
+ * This will take a LONG time (maybe 1hr+) the first time creating the
+   resources.
  * If you see any errors about missing SSL certificate, rerun
    'terraform apply', it should work the 2nd time around.
+ * The final output terraform shows is called 'Outputs'. Make a note
+   of this information, it lists the IDs of some of the resources
+   created. You you will need to copy this information into your app
+   later.
+ * If you need to see these variables again, just run 'terraform refresh'.
+ * Even after 'terraform apply' is finished, Amazon is still
+   performing a few actions in the background. In the AWS console,
+   check the CloudFront distribution status, as well as the
+   Certificate Manager validation status. Wait for these to show a
+   completed status, so that you know everything is setup
+   successfully.
 
 ## Deploy app
 
- * Edit [app/package.json](app/package.json) and find the "deploy" script and change the s3 bucket name to your own.
+ * Edit [app/package.json](app/package.json) and edit the listed
+   config variables, using the IDs output in the terraform output.
+     * Alternatively, you can set these variables in your ~/.npmrc
+       file and thus keep the IDs out of version control.
+     * Example ~/.npmrc file, where the app name listed in your package.json is 'app_name':
+     ```
+     app_name:aws_cloudfront_distribution=XXXXXXXXXXXXX
+     app_name:public_html_s3_bucket=xxxxxxxxxx
+     ```
  * From the app directory, run:
      * npm install
      * npm run deploy
- * Deploy will build the SPA application to the dist/ directory and
-   the run 'aws s3 sync' to copy the built website to the S3 bucket
-   that cloudfront pulls from.
-   
-At this point, you wait. As described in more detail in the notes inside [terraform/main.tf](terraform/main.tf), Amazon needs to do a few things in the background:
 
- * Verify your TLS certificate through the Route53 DNS entries created by this script.
- * Configure all the cloudfront endpoints.
- * This can take an hour.
- * Check the Cloudfront and Certificate Manager consoles for current status.
+ * Deploy does the following things:
+     * Checks the config variables.
+     * Builds the app in the dist/ directory.
+     * Uploads the dist/ directory to S3 via 'aws s3 sync'.
+     * Invalidates the CloudFront cache for index.html
+         * This avoids you having to wait for the CloudFront cache TTL
+           to run out on the old index.html (Default TTL is 1hr.)
+         * index.html is the only file that needs invalidation. All
+           the rest of the files in the app have versioned filenames,
+           and so won't ever need invalidation.
+         * Note: the first 1000 cache invalidations per month are
+           free. After that you start paying Amazon for each
+           invalidation (half a penny or so each time.)
+     * Waits for the CloudFront cache invalidation to finish.
 
-Once everything is done, your app should be visible at the frontend
-URL you configured in [terraform/vars.tf](terraform/vars.tf). You're just waiting for the tasks performed in 'terraform apply' to take effect. 'npm run deploy' will be fast for subsequent deployments.
+Your app should now be visible at the frontend URL you configured in
+[terraform/vars.tf](terraform/vars.tf).

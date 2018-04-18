@@ -2,10 +2,16 @@
   "name": "ts_vue",
   "version": "0.1.0",
   "private": true,
+  "config": {
+    "public_html_s3_bucket": "",
+    "aws_cloudfront_distribution": ""
+  },
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "deploy": "npm run build && aws s3 sync dist/ s3://ec-ts-vue-html --delete",
+    "check-config": "node scripts/check-config.js",
+    "deploy": "npm run check-config && npm run build && aws s3 sync dist/ s3://$npm_package_config_public_html_s3_bucket --delete && npm run cache-invalidate",
+    "cache-invalidate": "npm run check-config && aws cloudfront create-invalidation --distribution-id $npm_package_config_aws_cloudfront_distribution --paths /index.html | node scripts/cloudfront-wait-for-invalidation.js",
     "test": "vue-cli-service test",
     "e2e": "vue-cli-service e2e",
     "lint": "vue-cli-service lint",

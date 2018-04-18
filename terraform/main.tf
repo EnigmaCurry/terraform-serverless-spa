@@ -189,3 +189,19 @@ resource "aws_cognito_user_pool_domain" "domain" {
 }
 
 
+// Outputs - data that is needed outside terraform:
+output "aws_cognito_user_pool" {
+  value = "${aws_cognito_user_pool.pool.id}"
+}
+output "aws_cognito_user_pool_client" {
+  value = "${aws_cognito_user_pool_client.client.id}"
+}
+output "aws_cloudfront_distribution" {
+  value = "${aws_cloudfront_distribution.s3_distribution.id}"
+}
+output "frontend_url" {
+  value = "https://${var.frontend_domain_name}"
+}
+output "public_html_s3_bucket" {
+  value = "${aws_s3_bucket.public_html.id}"
+}
